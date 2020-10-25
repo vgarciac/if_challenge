@@ -17,4 +17,5 @@ build/Make*
 #Images And Videos
 test_images
 camera_cal
+output
 

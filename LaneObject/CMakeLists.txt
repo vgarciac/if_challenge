@@ -13,7 +13,8 @@ file(GLOB Cam_files
 )
 
 file(GLOB Main_files
-    "include/*.hpp"
+    "include/lane_lines.hpp"
+    "src/lane_lines.cpp"
     "src/main.cpp"
 )
 
