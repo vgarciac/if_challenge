@@ -1,13 +1,6 @@
-// OpenCV 4.0.1.cpp : This file contains the 'main' function. Program execution begins and ends there.
-#include <iostream>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core.hpp>
+#include "../include/lane_lines.hpp"
 
 #define DEBUG
-#define BOARD_W 9
-#define BOARD_H 6
-#define SQUARE_SIZE 0.1
-
 
 using namespace std;
 using namespace cv;
@@ -16,48 +9,55 @@ Size pattern_size(BOARD_W, BOARD_H);
 Size win_size(11, 11);
 Size zero_zone(-1, -1);
 bool corners_found;
-
 TermCriteria criteria(TermCriteria::EPS + TermCriteria::MAX_ITER, 30, DBL_EPSILON);
 
 int main()
 {
-    FileStorage fs;
+    bool f_ret;
     Mat input_img;
+    Mat camera_matrix, dist_coeff;
 
-    fs.open("../calibration_file.xml", FileStorage::READ);
-    input_img =  imread("../camera_cal/calibration1.jpg");
+    LaneDetector lane_detector;
+
+    // Load Camera matrix and distortion coefficients
+    f_ret = lane_detector.LoadCameraMatrix("../calibration_file.xml");
+    if (!f_ret)
+    {
+        cerr << "Failed to open calibration_file" << endl;
+        return -1;
+    }
+
+    // Load new image
+    input_img =  imread("../test_images/straight_lines2.jpg");
     if( input_img.empty())
     {
         cerr << "Failed to open test image" << endl;
         return -1;
     }
 
-    if (!fs.isOpened() || input_img.empty())
-    {
-        cerr << "Failed to open calibration_file" << endl;
-        return -1;
-    }
+    lane_detector.FeedImage(input_img);
 
-    Mat camera_matrix, new_camera_mtx, dist_coeff;
-    Mat undistorted;
+    // Apply distortion correction to image
+    lane_detector.UndistortImage();
 
-    fs["camera_matrix"] >> camera_matrix;
-    fs["dist_coeff"] >> dist_coeff;
+    // Get Region Of Interest (ROI)
+    lane_detector.GetImageROI();
 
+    // Detect edges and apply color thresholds
+    lane_detector.GetBinaryEdges();
+
+    // Appply a perspective tranformation to get the birds-eye-view
+    lane_detector.PerspectiveTransformation();
+
+    // 
+    lane_detector.DetectLine();
+
+
+
+    
     #ifdef DEBUG
-    cout << "camera_matrix: " << camera_matrix << endl;
-    cout << "dist_coeff: " << dist_coeff << endl;
-    #endif
-
-    int h = input_img.rows;
-    int w = input_img.cols;
-
-    new_camera_mtx = getOptimalNewCameraMatrix(camera_matrix, dist_coeff, input_img.size(), 1);
-    undistort(input_img, undistorted, camera_matrix, dist_coeff);
-
-    #ifdef DEBUG
-    imshow("original image: ", input_img);
-    imshow("undistorted image: ", undistorted);
+    imshow("original image: ", lane_detector.mask);
+    //imshow("undistorted image: ", input_img);
     waitKey(0);
     #endif//DEBUG
 
