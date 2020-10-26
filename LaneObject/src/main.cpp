@@ -13,52 +13,72 @@ TermCriteria criteria(TermCriteria::EPS + TermCriteria::MAX_ITER, 30, DBL_EPSILO
 
 int main()
 {
-    bool f_ret;
     Mat input_img;
-    Mat camera_matrix, dist_coeff;
 
     LaneDetector lane_detector;
+    VideoCapture capture("../videos/project_video.mp4");
+
+    char keyboard = 0;
+    if (!capture.isOpened()) {
+        //error while opening the video input
+        cerr << "Unable to open video file" << endl;
+        return -1;
+    }
 
     // Load Camera matrix and distortion coefficients
-    f_ret = lane_detector.LoadCameraMatrix("../calibration_file.xml");
-    if (!f_ret)
+    if (!lane_detector.LoadCameraMatrix("../calibration_file.xml"))
     {
         cerr << "Failed to open calibration_file" << endl;
         return -1;
     }
 
     // Load new image
-    input_img =  imread("../test_images/straight_lines2.jpg");
+    input_img =  imread("../test_images/straight_lines1.jpg");
     if( input_img.empty())
     {
         cerr << "Failed to open test image" << endl;
         return -1;
     }
 
-    lane_detector.FeedImage(input_img);
+    while(keyboard != 'q' && keyboard != 27)
+    {
+        if (!capture.read(input_img)) {
+            cerr << "Unable to read next frame." << endl;
+            cerr << "Exiting..." << endl;
+            return 0;
+        }
+        lane_detector.FeedImage(input_img);
 
-    // Apply distortion correction to image
-    lane_detector.UndistortImage();
+        // Apply distortion correction to image
+        lane_detector.UndistortImage();
 
-    // Get Region Of Interest (ROI)
-    lane_detector.GetImageROI();
+        // Get Region Of Interest (ROI)
+        lane_detector.GetImageROI();
 
-    // Detect edges and apply color thresholds
-    lane_detector.GetBinaryEdges();
+        // Detect edges and apply color thresholds
+        lane_detector.GetBinaryEdges();
 
-    // Appply a perspective tranformation to get the birds-eye-view
-    lane_detector.PerspectiveTransformation();
+        // Appply a perspective tranformation to get the birds-eye-view
+        lane_detector.PerspectiveTransformation();
 
-    // 
-    lane_detector.DetectLine();
+        // 
+        lane_detector.DetectLine();
 
+
+        lane_detector.ComputeCurvatureDistance();
+
+        //
+        lane_detector.DrawLanes();
+
+        keyboard = (char) waitKey(5);
+    }
 
 
     
     #ifdef DEBUG
-    imshow("original image: ", lane_detector.mask);
+    //imshow("original image: ", lane_detector.current_frame);
     //imshow("undistorted image: ", input_img);
-    waitKey(0);
+    //waitKey(0);
     #endif//DEBUG
 
 

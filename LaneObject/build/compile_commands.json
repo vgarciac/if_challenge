@@ -1,0 +1,22 @@
+[
+{
+  "directory": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/build",
+  "command": "/usr/bin/x86_64-linux-gnu-g++-8  -DGIT_COMMIT=\\\"589d-dirty\\\" -isystem /usr/include/opencv  -g   -std=c++11 -std=gnu++11 -o CMakeFiles/main.dir/src/lane_lines.cpp.o -c /home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/lane_lines.cpp",
+  "file": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/lane_lines.cpp"
+},
+{
+  "directory": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/build",
+  "command": "/usr/bin/x86_64-linux-gnu-g++-8  -DGIT_COMMIT=\\\"589d-dirty\\\" -isystem /usr/include/opencv  -g   -std=c++11 -std=gnu++11 -o CMakeFiles/main.dir/src/polyfit.cpp.o -c /home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/polyfit.cpp",
+  "file": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/polyfit.cpp"
+},
+{
+  "directory": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/build",
+  "command": "/usr/bin/x86_64-linux-gnu-g++-8  -DGIT_COMMIT=\\\"589d-dirty\\\" -isystem /usr/include/opencv  -g   -std=c++11 -std=gnu++11 -o CMakeFiles/main.dir/src/main.cpp.o -c /home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/main.cpp",
+  "file": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/main.cpp"
+},
+{
+  "directory": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/build",
+  "command": "/usr/bin/x86_64-linux-gnu-g++-8  -DGIT_COMMIT=\\\"589d-dirty\\\" -isystem /usr/include/opencv  -g   -std=c++11 -std=gnu++11 -o CMakeFiles/compute_camera_matrix.dir/src/camera_matrix.cpp.o -c /home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/camera_matrix.cpp",
+  "file": "/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/src/camera_matrix.cpp"
+}
+]

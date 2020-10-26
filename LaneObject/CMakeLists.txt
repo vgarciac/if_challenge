@@ -15,6 +15,7 @@ file(GLOB Cam_files
 file(GLOB Main_files
     "include/lane_lines.hpp"
     "src/lane_lines.cpp"
+    "src/polyfit.cpp" 
     "src/main.cpp"
 )
 
