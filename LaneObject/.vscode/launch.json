@@ -4,11 +4,31 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    {
+        "name": "(gdb) Clasifier",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/clasifier",
+        "args": [],
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            }
+        ]
+    },
+    
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) CARS",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/main",
+            "program": "${workspaceFolder}/build/cars",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -24,25 +44,10 @@
             ]
         },
         {
-            "name": "(gdb) Attach",
-            "type": "cppdbg",
-            "request": "attach",
-            "program": "enter program name, for example ${workspaceFolder}/a.out",
-            "processId": "${command:pickProcess}",
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
-            "name": "g++ - Build and debug active file",
+            "name": "(gdb) LANE",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "program": "${workspaceFolder}/build/lane",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -55,9 +60,7 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ],
-            "preLaunchTask": "C/C++: g++ build active file",
-            "miDebuggerPath": "/usr/bin/gdb"
+            ]
         }
     ]
 }

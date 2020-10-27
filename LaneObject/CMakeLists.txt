@@ -7,16 +7,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 find_package(OpenCV 3.2 REQUIRED )
 message("OpenCV_LIBS: " ${OpenCV_LIBS} )
 
-
-file(GLOB Cam_files
-    "src/camera_matrix.cpp"
+file(GLOB SVM_files
+    "include/clasifier.hpp"
+    "src/clasifier.cpp"
 )
 
-file(GLOB Main_files
+file(GLOB Cam_files
+    "src/calibration.cpp"
+)
+
+file(GLOB Cars_Files
+    "include/car_detector.hpp"
+    "src/car_detector.cpp"
+    "src/cars.cpp"
+)
+
+file(GLOB Lane_files
     "include/lane_lines.hpp"
     "src/lane_lines.cpp"
-    "src/polyfit.cpp" 
-    "src/main.cpp"
+    "src/polyfit.cpp"
+    "src/lane.cpp"
 )
 
 exec_program(
@@ -27,12 +37,23 @@ exec_program(
 
 add_definitions( -DGIT_COMMIT="${GIT_INFO}" )
 
+# SVM Clasifier
+add_executable( clasifier ${SVM_files} )	# bind all together
+target_compile_options( clasifier PUBLIC -std=c++11)	# c++11 requried
+target_link_libraries( clasifier ${OpenCV_LIBS})		# link libraries
+
 # CAMERA MATRIX
 add_executable( compute_camera_matrix ${Cam_files} )	# bind all together
 target_compile_options( compute_camera_matrix PUBLIC -std=c++11)	# c++11 requried
 target_link_libraries( compute_camera_matrix ${OpenCV_LIBS})		# link libraries
 
-# MAIN
-add_executable( main ${Main_files} )	# bind all together
-target_compile_options( main PUBLIC -std=c++11)	# c++11 requried
-target_link_libraries( main ${OpenCV_LIBS})		# link libraries
+# LANE
+add_executable( lane ${Lane_files} )	# bind all together
+target_compile_options( lane PUBLIC -std=c++11)	# c++11 requried
+target_link_libraries( lane ${OpenCV_LIBS})		# link libraries
+
+# CARS
+add_executable( cars ${Cars_Files} )	# bind all together
+target_compile_options( cars PUBLIC -std=c++11)	# c++11 requried
+target_link_libraries( cars ${OpenCV_LIBS})		# link libraries
+
