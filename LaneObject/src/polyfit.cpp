@@ -39,6 +39,6 @@ bool polynomial_curve_fit(std::vector<cv::Point>& key_point, int n, cv::Mat& A)
     
     A = cv::Mat::zeros(n + 1, 1, CV_64FC1);
     //Solve matrix A
-    cv::solve(X, Y, A, cv::DECOMP_LU);
+    cv::solve(X, Y, A, cv::DECOMP_SVD);
     return true;
 }
