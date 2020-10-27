@@ -9,12 +9,23 @@
 #define BOARD_H 6
 #define SQUARE_SIZE 0.1
 #define CANNY_SIGMA 0.5
-#define HSV_TH 150
-#define LAB_TH 150
+#define HSV_TH 170
+#define LAB_TH 200
 #define M_2PIX 3.7/700
+#define MIN_2UPDATE 50
+#define MORPH_K 3
 
-#define N_WINDOWS 8
-#define WINDOW_W 150
+#define N_WINDOWS_INIT 7
+#define N_WINDOWS_NEXT 20
+#define WINDOW_W 250
+#define ZONE_SIZE 100
+
+
+enum ZONES 
+{
+    UP,
+    DO//DOWN
+};
 
 using namespace cv;
 using namespace std;
@@ -23,9 +34,12 @@ void PolyFit(vector<Point> data_pts_, int order_, vector<float>& coef_);
 Mat CustomPolyfit(vector<Point>& in_point, int n);
 bool polynomial_curve_fit(std::vector<cv::Point>& key_point, int n, cv::Mat& A);
 
+void show(Mat _img, bool rot_ = false);
+
 class LaneDetector
 {
     public:
+    Mat to_plot;
     Mat current_frame;
     Mat mask;
     Mat lane_mask;
@@ -35,6 +49,7 @@ class LaneDetector
     bool first_time;
     double curvature_ref;
     double dist_2center;
+    int window_step;
 
     int left_lane_center;
     int right_lane_center;
@@ -43,7 +58,7 @@ class LaneDetector
     vector<Point> right_line_pts;
 
     // Initialize first_time as false
-    LaneDetector(bool _first = false) : first_time(_first) {};
+    LaneDetector(bool _first = true) : first_time(_first) {};
 
     bool LoadCameraMatrix(String file_);
 
@@ -68,6 +83,12 @@ class LaneDetector
     void FitLines(vector<Point>& left_pts_, vector<Point>& right_pts_);
 
     void UpdateWindows(int it_);
+
+    void ApplyZoneMask();
+
+    double GetArea(Point p1_, Point p2_, Point p3_);
+
+    double GetDistance(Point p1_, Point p2_);
 
     vector<int> ComputePositionHistogram(Mat _img);
 

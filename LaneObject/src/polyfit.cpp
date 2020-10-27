@@ -1,4 +1,5 @@
-//Polynomial Fit
+//Polynomial Fit algorithm
+//taked from: https://www.programmersought.com/article/50515052663/
 #include "../include/lane_lines.hpp"
 #include<iomanip>
 #include<cmath>
@@ -6,13 +7,12 @@
 using namespace cv;
 using namespace std;
 
-
 bool polynomial_curve_fit(std::vector<cv::Point>& key_point, int n, cv::Mat& A)
 {
     //Number of key points
     int N = key_point.size();
     
-                //Construct matrix X
+    //Construct matrix X
     cv::Mat X = cv::Mat::zeros(n + 1, n + 1, CV_64FC1);
     for (int i = 0; i < n + 1; i++)
     {
@@ -26,7 +26,7 @@ bool polynomial_curve_fit(std::vector<cv::Point>& key_point, int n, cv::Mat& A)
         }
     }
     
-                //Construct matrix Y
+    //Construct matrix Y
     cv::Mat Y = cv::Mat::zeros(n + 1, 1, CV_64FC1);
     for (int i = 0; i < n + 1; i++)
     {
@@ -38,7 +38,7 @@ bool polynomial_curve_fit(std::vector<cv::Point>& key_point, int n, cv::Mat& A)
     }
     
     A = cv::Mat::zeros(n + 1, 1, CV_64FC1);
-                //Solve matrix A
+    //Solve matrix A
     cv::solve(X, Y, A, cv::DECOMP_LU);
     return true;
 }
