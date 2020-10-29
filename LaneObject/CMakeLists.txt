@@ -10,6 +10,7 @@ message("OpenCV_LIBS: " ${OpenCV_LIBS} )
 file(GLOB SVM_files
     "include/clasifier.hpp"
     "src/clasifier.cpp"
+    "src/train_clasifier.cpp"
 )
 
 file(GLOB Cam_files
@@ -17,6 +18,8 @@ file(GLOB Cam_files
 )
 
 file(GLOB Cars_Files
+    "include/clasifier.hpp"
+    "src/clasifier.cpp"
     "include/car_detector.hpp"
     "src/car_detector.cpp"
     "src/cars.cpp"
