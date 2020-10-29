@@ -18,7 +18,7 @@
 #define N_WINDOWS_INIT 7
 #define N_WINDOWS_NEXT 20
 #define WINDOW_W 250
-#define ZONE_SIZE 100
+#define ZONE_SIZE 150
 
 
 enum ZONES 
