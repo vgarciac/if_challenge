@@ -13,6 +13,20 @@ void show(Mat _img, bool rot_){
     waitKey(1);
 }
 
+struct AddPoint
+{
+    Point pt;
+    AddPoint(Point _pt) : pt(_pt){};
+
+    void operator()(Point &in_pt) const
+    {
+        in_pt.x += pt.x;
+        in_pt.y += pt.y;
+    }
+};
+
+// std::for_each(myvec.begin(), myvec.end(), AddPoint(1.0));
+
 
 void LaneDetector::FeedImage(Mat image_)
 {
@@ -137,7 +151,7 @@ void LaneDetector::GetBinaryEdges()
     // show(binary_l); 
 
     // Combine all masks
-    this->mask = binary_sat | binary_l | binary_edges;
+    this->mask = binary_sat | binary_l ;//| binary_edges;
 
     Mat m_kernel = getStructuringElement(MORPH_RECT, Size(MORPH_K, MORPH_K));
     morphologyEx(this->mask.clone(), this->mask, MORPH_CLOSE, m_kernel);
@@ -232,7 +246,6 @@ void LaneDetector::FitLines(vector<Point>& left_pts_, vector<Point>& right_pts_)
     left_pts_ = left_points_fit;
     right_pts_ = right_points_fit;
 
-
     vector<Mat> channels;
     channels.push_back(this->mask);
     channels.push_back(this->mask);
@@ -242,7 +255,7 @@ void LaneDetector::FitLines(vector<Point>& left_pts_, vector<Point>& right_pts_)
     cv::polylines(imgHist, left_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
     cv::polylines(imgHist, right_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
  
-    //show(imgHist, true);
+    // show(imgHist, true);
 
     return;
 }
@@ -290,9 +303,11 @@ void LaneDetector::UpdateWindows(int it_)
     if(left_aux_pts.size() >= MIN_2UPDATE)
     {
         // Get the average from all the points in the window
+        std::for_each(left_aux_pts.begin(), left_aux_pts.end(), AddPoint(Point(left_center_x, left_center_y)));
+        this->left_line_pts.insert(this->left_line_pts.begin(), left_aux_pts.begin(), left_aux_pts.end());
         sum  = std::accumulate(left_aux_pts.begin(), left_aux_pts.end(), Point(0.0,0.0));
-        left_center_y = left_center_y + sum.y/left_aux_pts.size();
-        this->left_line_pts.push_back(Point(left_center_x+this->mask.cols/(this->window_step*2), left_center_y));
+        left_center_y = sum.y/left_aux_pts.size();
+        // this->left_line_pts.push_back(Point(left_center_x+this->mask.cols/(this->window_step*2), left_center_y));
         // Update centers for next window
         this->left_lane_center = left_center_y;
     }
@@ -300,9 +315,11 @@ void LaneDetector::UpdateWindows(int it_)
     if(right_aux_pts.size() >= MIN_2UPDATE)
     {
         // same for right line
+        std::for_each(right_aux_pts.begin(), right_aux_pts.end(), AddPoint(Point(right_center_x, right_center_y)));
+        this->right_line_pts.insert(this->right_line_pts.begin(), right_aux_pts.begin(), right_aux_pts.end());
         sum  = std::accumulate(right_aux_pts.begin(), right_aux_pts.end(), Point(0.0,0.0));
-        right_center_y = right_center_y + sum.y/right_aux_pts.size();
-        this->right_line_pts.push_back(Point(right_center_x+this->mask.cols/(this->window_step*2), right_center_y));
+        right_center_y = sum.y/right_aux_pts.size();
+        // this->right_line_pts.push_back(Point(right_center_x+this->mask.cols/(this->window_step*2), right_center_y));
         // Update centers for next window
         this->right_lane_center = right_center_y;
     }
