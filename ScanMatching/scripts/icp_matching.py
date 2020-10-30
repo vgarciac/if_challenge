@@ -3,6 +3,7 @@ import numpy as np
 # Import library to plot in python
 from matplotlib import pyplot as plt
 from matplotlib import collections as mc
+from matplotlib.pyplot import draw
 # Import functions from scikit-learn (Kdtree)
 from sklearn.neighbors import KDTree
 from sklearn.metrics import mean_squared_error
@@ -95,8 +96,14 @@ def show_ICP(data, ref, R_list, T_list, neighbors_list):
     # Start figure
     plt.show()
 
-def rms(x):
-    return np.sqrt(x.dot(x)/x.size)
+
+def draw_event1():
+    plt.show()
+
+def press1(event):
+    if event.key == 'right':
+        pass
+    draw_event1()
     
 def calculate_global_matrices(R_prev, T_prev, R, T):
 
@@ -190,6 +197,7 @@ def icp_matching(X, ref, max_iter, RMS_threshold):
     # RMS error is computed based on Neearest Neighbors
     rms_before_transf = mean_squared_error(np.vstack(ref[index]), X)
     print('The RMS (root mean square) error before ICP iteration N ({:d}) is: ({:.3f})'.format(0, rms_before_transf))
+    fig, ax = plt.subplots()
 
     for iteration in range(max_iter):
 
@@ -209,11 +217,23 @@ def icp_matching(X, ref, max_iter, RMS_threshold):
         R_prev = R
         T_prev = T
         # Computing the RMS error
-        rms_after_transf =  mean_squared_error(np.vstack(ref[index]), X)
-        print('The RMS (root mean square) error after ICP iteration N ({:d}) is: ({:.3f})'.format(iteration, rms_after_transf))
+        rms_error =  mean_squared_error(np.vstack(ref[index]), X)
+        print('The RMS (root mean square) error after ICP iteration N ({:d}) is: ({:.3f})'.format(iteration, rms_error))
 
-        if rms_after_transf < RMS_threshold:
+        if rms_error < RMS_threshold:
             break
+
+        plt.cla()
+        ax.plot(X.T[0], X.T[1], 'r.')
+        ax.plot(ref.T[0], ref.T[1], 'b.')
+        ax.set_title('ICP matching 2D')
+        ax.set_title('Iteration {:d}  RMS error {:0.4f}'.format(iteration, rms_error))
+        plt.axis('equal')
+        plt.draw()
+        plt.waitforbuttonpress(0) # this will wait for indefinite time
+
+    plt.show()
+
 
     # Variable for aligned X, this is the cloud after applying ICP
     X_aligned = np.copy(X)
