@@ -6,24 +6,38 @@ using namespace cv::ml;
 
 void CarsDetector::FeedImage(Mat image_)
 {
-    this->mask.release();
-
+    // Feed algoriyhm with new image
     this->current_frame = image_.clone();
+    // And create a new mask (previous masks are used to consider passed frames)
+    this->masks.push_back(Mat(image_.size(), CV_8UC1, Scalar(0)));
+    return;
+}
+
+void CarsDetector::Compute()
+{
+        
+    // Apply distortion correction to image
+    this->UndistortImage();
+
+    // Rect roi(0, input_img.rows*ROI_TOP, input_img.cols, input_img.rows*ROI_BOT);
+    // rectangle(this->current_frame, roi, Scalar(0,255,0), 3, 8, 0);
+
+    this->SlideWindowsSearch();    
+
+    this->UpdateMAsks();
+
     return;
 }
 
 bool CarsDetector::LoadSVMModel(String file_)
 {
+    // Create SVM object and load trained model
     this->svm = Algorithm::load<SVM>(file_);
     if(this->svm == NULL)
     {
         // cerr << "(!) Error loading SVM Model. Exiting." << endl;
         return false;
     }
-    svm->setType(SVM::C_SVC);
-    svm->setC(0.1);
-    svm->setKernel(SVM::LINEAR);
-    svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, (int)1e7, 1e-6));
 
     return true;
 }
@@ -59,83 +73,78 @@ void CarsDetector::UndistortImage()
     return;
 }
 
-void CarsDetector::LoadLabeledImages()
-{
-    /*
-    this->labeled_imgs = vector<vector<Mat>>(2);
-    this->labeled_imgs[CARS] = vector<Mat>();
-    this->labeled_imgs[NON_CARS] = vector<Mat>();
-
-    vector<cv::String> file_cars, file_non_cars;
-    glob("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/data/vehicles/vehicles/*.png", file_cars, true);
-    glob("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/data/non-vehicles/non-vehicles/*.png", file_non_cars, true);
-
-    for(String path: file_cars)
-    {
-        this->labeled_imgs[CARS].push_back(imread(path));
-    }
-
-    for(String path: file_non_cars)
-    {
-        this->labeled_imgs[NON_CARS].push_back(imread(path));
-    }
-
-    cout <<"this->labeled_imgs[CARS]: " << this->labeled_imgs[CARS].size() << endl;
-    cout <<"this->labeled_imgs[NON_CARS]: " << this->labeled_imgs[NON_CARS].size() << endl;
-*/
-    return;
-}
 
 void CarsDetector::SlideWindowsSearch()
 {
-    this->detected_rects = vector<Rect>();
+    // Update search region (only consider a portion of the image)
     int w = this->current_frame.cols;
     int h = this->current_frame.rows;
     int h_start = this->current_frame.rows * ROI_TOP;
     int h_end = h_start + this->current_frame.rows * ROI_BOT;
 
+    // Create ROI object (Region of Interest)
     Rect temp_roi(0, 0, WINDOW_SIZE, WINDOW_SIZE);
     Mat candidate;
     int prediction;
 
-    FileStorage fs;
-    fs.open("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/normalisation.xml", FileStorage::READ);
-    Mat mean, stdev;
-    Mat meansigma;
-    fs["meansigma"] >> meansigma;
-
-    Mat means = meansigma.col(0).clone();
-    Mat sigmas = meansigma.col(1).clone();
-
-    for(int i = h_start; i < h_end; i+= WINDOW_SIZE*WINDOW_OVERLAP)
+    // Start Sliding windows search
+    for(int i = h_start; i+WINDOW_SIZE < h_end; i+= WINDOW_SIZE*WINDOW_OVERLAP)
     {
         temp_roi.y = min(i, h-WINDOW_SIZE);
-        for(int j = 0; j <  w; j+=WINDOW_SIZE*WINDOW_OVERLAP)
+        for(int j = 0; j+WINDOW_SIZE < w; j+=WINDOW_SIZE*WINDOW_OVERLAP)
         {
             temp_roi.x =  min(j, w-WINDOW_SIZE);
             candidate.release();
             Mat resized;
+            // Resize to fir 64x64 (trained images size)
             resize(this->current_frame(temp_roi),resized,Size(64, 64));
+            // Compute image features (same as training: HOG, Hist, Binning)
             GetFeatureVector(resized, candidate);
-
-            // for(size_t k = 0; k < mean.cols; k++){
-            //     float mean = means.at<float>(k);
-            //     float sigma = sigmas.at<float>(k);
-            //     candidate.at<float>(0,k) = (candidate.at<float>(0,k) - mean) / sigma;
-            //     // candidate.at<float>(0,k) = candidate.at<float>(0,k) - mean.at<float>(0,k);
-            //     // candidate.at<float>(0,k) = candidate.at<float>(0,k)/stdev.at<float>(0,k);
-            // }
-
+            // Ask the SVM if the current ROI is a vehicle or not
             prediction = svm->predict(candidate);
             if(prediction > 0)
             {
-                //show(this->current_frame(temp_roi));
-                rectangle(this->current_frame, temp_roi, Scalar(0,255,0), 3, 8, 0);
+                // Perform a weighted sum in the detected square (overlapping frames become whiter)
+                this->masks[this->masks.size()-1](temp_roi) = this->masks[this->masks.size()-1](temp_roi)+Scalar(255)*MAS_SUM;
             }
-            //rectangle(this->current_frame, temp_roi, Scalar(0,255,0), 3, 8, 0);
-            // imwrite("../data/test_data/"+to_string(i*j)+".png", this->current_frame(temp_roi));
         }
     }
 
     return;
+}
+
+void CarsDetector::UpdateMAsks()
+{
+    // Delete oldest mask
+    if(this->masks.size() >= N_MASKS)
+    {
+        this->masks.erase(this->masks.begin());
+    }
+
+    // Perform a weighted sum of previous masks (to consider previous frames)
+    // Consecutive detected frames becomes whiter
+    this->cumul_masks = Mat(this->current_frame.size(), CV_8UC1, Scalar(0));
+    for(size_t i = 0; i < this->masks.size()-1; i++)
+    {
+        cumul_masks = cumul_masks + this->masks[i].clone();
+    }
+    cumul_masks = cumul_masks > MASK_THRESH;
+
+    // Apply morpholical operations to delete small rectangles (lines superposed) 
+    Mat m_kernel = getStructuringElement(MORPH_RECT, Size(MORPH_K_CAR, MORPH_K_CAR));
+    morphologyEx(this->cumul_masks.clone(), this->cumul_masks, MORPH_CLOSE, m_kernel);
+    morphologyEx(this->cumul_masks.clone(), this->cumul_masks, MORPH_OPEN, m_kernel);
+
+    // Gaussian Blur to soften the detected shape
+    GaussianBlur(cumul_masks, cumul_masks, Size(15, 15), 0);
+}
+
+void CarsDetector::DrawCars(Mat &_img)
+{
+    // Detect contours in the final mask, contours are drawn in the final image
+    findContours( this->cumul_masks, this->cars_contours, this->hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE );
+    for( size_t i = 0; i< this->cars_contours.size(); i++ )
+    {
+        drawContours( _img, this->cars_contours, (int)i,  Scalar( 255, 255, 0 ), 3, LINE_8, hierarchy, 0 );
+    }
 }

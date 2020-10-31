@@ -32,6 +32,17 @@ file(GLOB Lane_files
     "src/lane.cpp"
 )
 
+file(GLOB Pilepine_files
+    "include/clasifier.hpp"
+    "src/clasifier.cpp"
+    "include/lane_lines.hpp"
+    "include/car_detector.hpp"
+    "src/lane_lines.cpp"
+    "src/car_detector.cpp"
+    "src/polyfit.cpp"
+    "src/main.cpp"
+)
+
 exec_program(
     "git"
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -59,4 +70,9 @@ target_link_libraries( lane ${OpenCV_LIBS})		# link libraries
 add_executable( cars ${Cars_Files} )	# bind all together
 target_compile_options( cars PUBLIC -std=c++11)	# c++11 requried
 target_link_libraries( cars ${OpenCV_LIBS})		# link libraries
+
+# PIPELINE
+add_executable( main ${Pilepine_files} )	# bind all together
+target_compile_options( main PUBLIC -std=c++11)	# c++11 requried
+target_link_libraries( main ${OpenCV_LIBS})		# link libraries
 

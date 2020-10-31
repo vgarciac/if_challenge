@@ -1,24 +1,24 @@
+#pragma once
+
 #include <iostream>
 #include <string>
 #include <numeric>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#define GAUSSIAN_KERNEL 15
-#define BOARD_W 9
-#define BOARD_H 6
-#define SQUARE_SIZE 0.1
-#define CANNY_SIGMA 0.5
-#define HSV_TH 170
-#define LAB_TH 200
-#define M_2PIX 3.7/700
-#define MIN_2UPDATE 50
-#define MORPH_K 3
+const int GAUSSIAN_KERNEL = 15;
+const float CANNY_SIGMA = 0.5;
+const int HSV_TH = 170;
+const int LAB_TH = 200;
+const float M_2PIX_X = 3.7/700.0;
+const float M_2PIX_Y = 30.0/700.0;
+const int MIN_2UPDATE = 50;
+const int MORPH_K = 3;
 
-#define N_WINDOWS_INIT 7
-#define N_WINDOWS_NEXT 20
-#define WINDOW_W 250
-#define ZONE_SIZE 150
+const int N_WINDOWS_INIT = 7;
+const int N_WINDOWS_NEXT = 20;
+const int WINDOW_W = 250;
+const int ZONE_SIZE = 150;
 
 
 enum ZONES 
@@ -74,9 +74,11 @@ class LaneDetector
 
     void DetectLine();
 
-    void DrawLanes();
+    void DrawLanes(Mat &_img);
 
     void ComputeCurvatureDistance();
+
+    void Compute();
 
     private:
 
@@ -86,9 +88,9 @@ class LaneDetector
 
     void ApplyZoneMask();
 
-    double GetArea(Point p1_, Point p2_, Point p3_);
+    double GetArea(Point2f p1_, Point2f p2_, Point2f p3_);
 
-    double GetDistance(Point p1_, Point p2_);
+    double GetDistance(Point2f p1_, Point2f p2_);
 
     vector<int> ComputePositionHistogram(Mat _img);
 

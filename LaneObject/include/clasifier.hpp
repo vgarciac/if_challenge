@@ -27,6 +27,6 @@ Mat GetColorHistogramFeatures(Mat _img);
 
 Mat GetBinnedFeatures(Mat _img);
 
-int GetFeatureVector(Mat _img, Mat &_vector);
+void GetFeatureVector(Mat _img, Mat &_vector);
 
 Mat GenerateLabel(Mat &_vector, bool _label);
