@@ -7,37 +7,45 @@ from matplotlib.pyplot import draw
 # Import functions from scikit-learn
 from sklearn.neighbors import KDTree
 from sklearn.metrics import mean_squared_error
+# Import function for random generation
 import random
-import cv2
 
 
-def UpdateTransformationMatrices(R_prev, T_prev, R, T):
+def UpdateTransformationMatrices(R_global, T_global, R, T):
     '''
-    Computes the least-squares best-fit transform that maps corresponding points P to X.
+    Computes the best-fit transform that maps corresponding points P to X.
     Inputs :
-        R_prev = (2 x 2) matrix representing the rotation for the previous iteration
-        T_prev = (2 x 1)matrix representing the translation for the previous iteration
+        R_global = (2 x 2) matrix representing the global rotation
+        T_global = (2 x 1) matrix representing the global translation
+        R = (2 x 2) matrix representing the rotation for the current iteration
+        T = (2 x 1) matrix representing the translation for the current iteration
     Returns :
         R = (2 x 2) matrix representing the global rotation
         T = (2 x 1) matrix representing the global translation
         Such that R * X + T is aligned on P
     '''
-    # if(T_prev is None):
+    # if(T_global is None):
     #     T_global = T
     #     R_global = R
     #     return R_global, T_global
 
-    H_prev = [[R_prev[0,0], R_prev[0,1], T_prev[0,0]],
-              [R_prev[1,0], R_prev[1,1], T_prev[1,0]],
+    # Build global transformation --> H = [R T]
+    H_global = [[R_global[0,0], R_global[0,1], T_global[0,0]],
+              [R_global[1,0], R_global[1,1], T_global[1,0]],
               [0, 0, 1]]
+
+    # Build current iteration transformation --> H = [R T]
     H = [[R[0, 0], R[0, 1], T[0, 0]],
          [R[1, 0], R[1, 1], T[1, 0]],
          [0, 0, 1]]
 
-    H_global = np.dot(H_prev, H)
+     # update global transformation --> H_glob = H_glob * H
+    H_global = np.dot(H_global, H)
 
+    # Separate R from H
     R_global = np.array([[H_global[0, 0], H_global[0, 1]],
                         [H_global[1, 0], H_global[1, 1]]])
+    # Separate T from H
     T_global = np.array([[H_global[0, 2]],
                         [H_global[1, 2]]])
 
@@ -51,8 +59,8 @@ def ComputeBestTransformation(P, X):
         X = input points
         P = reference scene points
     Returns :
-        R = (d x d) rotation matrix
-        T = (d x 1) translation vector
+        R = (2 x 2) rotation matrix
+        T = (2 x 1) translation vector
         Such that R * X + T is aligned on P
     '''
 
@@ -70,7 +78,7 @@ def ComputeBestTransformation(P, X):
     # Find the Singular-Value-Descomposition --> ( U*S*V^t ) of H
     U, S, V_t = np.linalg.svd(W)
 
-    # Return R = UV^t and T = u_x - R*u_p'
+    # Return R = UV^t
     R = np.dot(U, V_t)
 
     # special reflection case
@@ -78,6 +86,7 @@ def ComputeBestTransformation(P, X):
         U[:,len(U)-1] = U[:,len(U)-1]*(-1)
         R = np.dot(U, V_t)
 
+    # Return T = u_x - R*u_p'
     T = u_x - (np.dot(R, u_p))
 
     return R, np.expand_dims(T, axis=1)
@@ -91,11 +100,11 @@ def ICPMatching(P, X, max_iter, RMS_threshold, fast = False, n_samples = 200):
         P = reference scene points
         max_iter = stop condition on the number of iterations
         RMS_threshold = stop condition on the distance
+        fast = boolean to activate the subsampling option (faster for big sets)
     Returns :
-        points_aligned = X points aligned on P points
-
+        points_aligned = X points aligned to P
     '''
-    # To compute the final transformation at the end
+    # X_original -> To compute the final transformation at the end
     X_ori = X
 
     # Initialize variables
@@ -138,14 +147,17 @@ def ICPMatching(P, X, max_iter, RMS_threshold, fast = False, n_samples = 200):
             break
 
         # Plot
+        print(X.shape)
+        print(P.shape)
         plt.cla()
-        ax.plot(X.T[0], X.T[1], 'r.')
         ax.plot(P.T[0], P.T[1], 'b.')
+        ax.plot(X.T[0], X.T[1], 'r.')
         ax.set_title('ICP matching 2D')
         ax.set_title('Iteration {:d}  RMS error {:0.4f}'.format(iteration, rms_error))
         plt.axis('equal')
         plt.draw()
-        plt.waitforbuttonpress(0) # this will wait for indefinite time
+        # Wait for button to avance one itaration
+        plt.waitforbuttonpress(0)
 
     plt.show()
 
@@ -160,7 +172,7 @@ def ICPMatching(P, X, max_iter, RMS_threshold, fast = False, n_samples = 200):
 
 def create_points(n_points):
     #for i in range(n_points):
-    data = np.random.rand(n_points, 2)*100
+    ref_pts = np.random.rand(n_points, 2)*100
     rad = np.random.random_sample()*40
     tx = np.random.random_sample()*50
     ty = np.random.random_sample()*50
@@ -172,32 +184,34 @@ def create_points(n_points):
          [s, c, ty],
          [0, 0, 2]]
 
-    R = np.array([ [H[0][0], H[0][1]], [H[1][0], H[1][1]] ])
+    R = np.array([ [H[0][0], H[0][1]],
+                   [H[1][0], H[1][1]] ])
     T = np.array([ [H[0][2]], [H[1][2]] ])
 
-    template = (np.dot(R, data.T).T + T.T)
+    pts = (np.dot(R, ref_pts.T).T + T.T)
 
-    return data, template
+    return ref_pts, pts
 
 
 if __name__ == '__main__':
 
-    points_ref2, points2 = create_points(1000)
+    points_ref, points = create_points(1000)
+    # random.shuffle(points)
 
     # Create and save data
-    # np.save('points_ref.npy', points_ref2)
-    # np.save('points.npy', points2)
+    # np.save('points_ref.npy', points_ref)
+    # np.save('points.npy', points)
 
     # # Load data
     # points_ref = np.load('points_ref.npy')
     # points = np.load('points.npy')
-    random.shuffle(points2)
 
-    # Apply ICP
-    max_iter = 100
+    # Define parameters
+    max_iter = 200
     RMS_threshold = 0.01
     n_samples = 200
-    data_aligned, R, T = ICPMatching(points_ref2, points2, max_iter, RMS_threshold)
+    # Apply ICP
+    data_aligned, R, T = ICPMatching(points_ref, points, max_iter, RMS_threshold)
 
     # fig, ax = plt.subplots()
     # plt.cla()
