@@ -39,7 +39,6 @@ class Python_pub:
             # Set new publishing rate
             self.rate = rospy.Rate(dynamic_param)
             
-
             # Create String message
             message = "ifollow Challenge - Victor"
 

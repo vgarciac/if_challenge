@@ -87,6 +87,8 @@ Mat GetColorHistogramFeatures(Mat _img)
     // Convert to 1xn matrix
     descriptor = descriptor.reshape(1, 1);
 
+    normalize(descriptor, descriptor, 1, 0, NORM_L2, -1, Mat());
+
     // cout << hist_channel[0];
     // show(_img);
 
@@ -99,10 +101,10 @@ Mat GetBinnedFeatures(Mat _img)
     Mat res_img;
 
     // Split color channels
-    _img.convertTo(_img, CV_32FC1);
     vector<Mat> channels;
-    resize(_img.clone(), _img, cv::Size(), 0.5, 0.5);
-    split( _img, channels);
+    resize(_img, res_img, cv::Size(), 0.5, 0.5);
+    res_img.convertTo(res_img, CV_32FC1);
+    split( res_img, channels);
 
     // Convert to 1xn matrix
     channels[0] = channels[0].reshape(1, 1);
@@ -113,7 +115,7 @@ Mat GetBinnedFeatures(Mat _img)
     hconcat(channels[0], channels[1], descriptor);
     hconcat(descriptor, channels[2], descriptor);
 
-    // Normalize values of histogram (between 0-1)
+    //Normalize values of histogram (between 0-1)
     // normalize(descriptor, descriptor, 1, 0, NORM_L2 , -1, Mat() );
 
     descriptor = (descriptor - 125) / 125;
@@ -136,8 +138,8 @@ int GetFeatureVector(Mat _img, Mat &_vector)
 
     // Concatenate all three vectors in a single one
     hconcat(hog_f, hist_f, feature_vector);
-    int non_normalized_sz = feature_vector.cols;
-    hconcat(feature_vector, bin_f, feature_vector);
+    int non_normalized_sz = hog_f.cols;
+    hconcat(hog_f, bin_f, feature_vector);
 
     // Check to assign or concatenated the computed vector with the input vector
     if(_vector.empty())
