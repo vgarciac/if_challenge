@@ -8,7 +8,7 @@ using namespace cv::ml;
 int main()
 {
 
-    Ptr<SVM> loaded_svm = Algorithm::load<SVM>("../svm_trained_test.xml");
+    Ptr<SVM> loaded_svm = Algorithm::load<SVM>("../svm_big2.xml");
 
     if(loaded_svm != NULL)
     {
@@ -85,29 +85,30 @@ int main()
         Mat mean_mtx(1, no_normalized, CV_32F);
         Mat std_dev_mtx(1, no_normalized, CV_32F);
 
-        Mat means, sigmas;
-        for (size_t i = 0; i < no_normalized; i++)
-        {
-            Mat mean, sigma;
-            //cout << training_samples << endl;
-            meanStdDev(training_samples.col(i), mean, sigma);
-            //cout << training_samples << endl;
-            //training_samples.col(i) = (test_ - mean[0])/stddev[0];
-            means.push_back(mean);
-            sigmas.push_back(sigma);
+        // Mat means, sigmas;
+        // for (size_t i = 0; i < no_normalized; i++)
+        // {
+        //     Mat mean, sigma;
+        //     //cout << training_samples << endl;
+        //     meanStdDev(training_samples.col(i), mean, sigma);
+        //     //training_samples.col(i) = (test_ - mean[0])/stddev[0];
+        //     // cout << training_samples << endl;
+        //     means.push_back(mean);
+        //     sigmas.push_back(sigma);
 
-            //cout << "Normalisation: " << i << endl;
-            training_samples.col(i) = (training_samples.col(i) - mean) / sigma;
-        }
-        Mat meansigma;
-        hconcat(means, sigmas, meansigma);  //both params in same matrix
+        //     //cout << "Normalisation: " << i << endl;
+        //     training_samples.col(i) = (training_samples.col(i) - mean) / sigma;
+        //     // cout << training_samples << endl;
+        // }
+        // Mat meansigma;
+        // hconcat(means, sigmas, meansigma);  //both params in same matrix
 
-        //cout << mean_mtx << endl;
-        cout << "mean_mtx rows: " << mean_mtx.rows << endl;
-        FileStorage fs;
-        fs.open("../normalisation.xml", FileStorage::WRITE);
+        // cout << mean_mtx << endl;
+        // cout << "mean_mtx rows: " << mean_mtx.rows << endl;
+        // FileStorage fs;
+        // fs.open("../normalisation.xml", FileStorage::WRITE);
 
-        fs << "meansigma" << meansigma;
+        // fs << "meansigma" << meansigma;
         
         // cv::Scalar mean, stddev;
         // cv::meanStdDev(hist, mean, stddev);
@@ -120,7 +121,6 @@ int main()
 
         Ptr<SVM> svm = SVM::create();
         svm->setType(SVM::C_SVC);
-        svm->setC(0.1);
         svm->setKernel(SVM::LINEAR);
         svm->setTermCriteria(TermCriteria(TermCriteria::MAX_ITER, (int)1e7, 1e-6));
 
@@ -143,7 +143,7 @@ int main()
         // Mat sampleMat = (Mat_<float>(1,2) << 500, 500);
         //cout << svm->predict(sampleMat) << endl;
 
-        svm->save("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/svm_trained_test.xml");        
+        svm->save("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/svm_big2.xml");        
     }
 
     return 0;

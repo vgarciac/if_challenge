@@ -118,17 +118,16 @@ void CarsDetector::SlideWindowsSearch()
             resize(this->current_frame(temp_roi),resized,Size(64, 64));
             GetFeatureVector(resized, candidate);
 
-
-            for(size_t k = 0; k < mean.cols; k++){
-                float mean = means.at<float>(k);
-                float sigma = sigmas.at<float>(k);
-                candidate.at<float>(0,k) = (candidate.at<float>(0,k) - mean) / sigma;
-                // candidate.at<float>(0,k) = candidate.at<float>(0,k) - mean.at<float>(0,k);
-                // candidate.at<float>(0,k) = candidate.at<float>(0,k)/stdev.at<float>(0,k);
-            }
+            // for(size_t k = 0; k < mean.cols; k++){
+            //     float mean = means.at<float>(k);
+            //     float sigma = sigmas.at<float>(k);
+            //     candidate.at<float>(0,k) = (candidate.at<float>(0,k) - mean) / sigma;
+            //     // candidate.at<float>(0,k) = candidate.at<float>(0,k) - mean.at<float>(0,k);
+            //     // candidate.at<float>(0,k) = candidate.at<float>(0,k)/stdev.at<float>(0,k);
+            // }
 
             prediction = svm->predict(candidate);
-            if(prediction)
+            if(prediction > 0)
             {
                 //show(this->current_frame(temp_roi));
                 rectangle(this->current_frame, temp_roi, Scalar(0,255,0), 3, 8, 0);

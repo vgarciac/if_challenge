@@ -4,20 +4,11 @@
 #include <dynamic_reconfigure/server.h>
 #include <ros_basics/RateConfig.h>
 
-
-
 #include <sstream>
-const long int big_number = 1000000;
 
 ros::WallTime start_, end_;
 float delta_time = 0.1;
 int dynamic_param = 10;
-
-void foo()
-{
-    for(int i = 0 ; i < big_number ; i++){}
-    return;
-}
 
 void callback(ros_basics::RateConfig &config, uint32_t level) {
     // Save dynamic parameter
@@ -36,9 +27,9 @@ int main(int argc, char **argv)
     //Create a handler to process the node 
     ros::NodeHandle node;
 
+    // Server for dinamic parameter
     dynamic_reconfigure::Server<ros_basics::RateConfig> server;
     dynamic_reconfigure::Server<ros_basics::RateConfig>::CallbackType f;
-
     f = boost::bind(&callback, _1, _2);
     server.setCallback(f);
 
@@ -49,6 +40,7 @@ int main(int argc, char **argv)
     ros::Publisher status_pub = node.advertise<std_msgs::Float32>("cpp_publisher_rate", 10);
     ros::Publisher required_value_pub = node.advertise<std_msgs::Float32>("cpp_required_rate", 10);
 
+    // Set default loop rate
     ros::Rate loop_rate(dynamic_param);
 
     // A count of how many messages we have sent.

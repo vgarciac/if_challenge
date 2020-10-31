@@ -2,28 +2,22 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Float32.h"
 
-const long int big_number = 1e-6;
-
 ros::WallTime start_, end_;
 float delta_time = 0;
 
 ros::Publisher status_pub;
-
-void foo()
-{
-    for(int i = 0 ; i < big_number ; i++){}
-    return;
-}
 
 /**
  * Simple CPP subscriber
  */
 void BasicTopicCallback(const std_msgs::String::ConstPtr& msg)
 {
+    // Update loop rate measure
     end_ = ros::WallTime::now();
     delta_time = (end_ - start_).toSec();
     start_ = ros::WallTime::now();
 
+    // Send real rate, frequency at which messages are received
     std_msgs::Float32 real_rate;
     real_rate.data = 1/delta_time;
     status_pub.publish(real_rate);

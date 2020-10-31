@@ -19,7 +19,7 @@ int main()
         return -1;
     }
 
-    if(!car_detector.LoadSVMModel("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/svm_trained_test.xml"))
+    if(!car_detector.LoadSVMModel("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/svm_big.xml"))
     {
         cerr << "(!) Failed to open SVM_file. Exiting." << endl;
         return -1;
