@@ -73,14 +73,14 @@ For the last case we have a similar result to the previous one, the python publi
 To understand why this happens, it is important to understand the relationship between the loop rate configured in the node, and the computation time.
 
 <p align="center" width="100%">
-<img src="plots/rate_1.jpg"> </p>
+<img width="100%" src="plots/rate_1.svg"> </p>
 
 The function that controls the loop frequency in ROS uses a timeout to achieve writing messages always at the same frequency. The ROS nodes handle this dynamically, sleeping the code the amount of time needed to complete a fixed period.
 
 The problem occurs when the execution time takes more than the configured period, in this case, the code does not sleep and the publishing rate is given by the execution time of the node.
 
 <p align="center" width="100%">
-<img src="plots/rate_2.jpg"> </p>
+<img width="100%" src="plots/rate_2.svg"> </p>
 
 It is for this that the nodes in C++ work to a frequency higher that those of python, since a code in C++ (lof low level language) it is executed faster that the same code writed in Python (high level language).
 
