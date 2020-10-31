@@ -70,7 +70,6 @@ if __name__ == '__main__':
     # Load data
     points_ref = np.load('points_ref.npy')
     points = np.load('points.npy')
-    Define parameters
     # Define parameters
     max_iter = 200
     RMS_threshold = 0.01
