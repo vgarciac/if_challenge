@@ -8,11 +8,11 @@ void show(Mat _img, bool rot_){
     {
         rotate(_img.clone(), _img, ROTATE_90_COUNTERCLOCKWISE);
     }
-
     imshow("Debug image", _img);
     waitKey(1);
 }
 
+// Auxiliar function
 struct AddPoint
 {
     Point pt;
@@ -24,9 +24,6 @@ struct AddPoint
         in_pt.y += pt.y;
     }
 };
-
-// std::for_each(myvec.begin(), myvec.end(), AddPoint(1.0));
-
 
 void LaneDetector::FeedImage(Mat image_)
 {
@@ -70,11 +67,36 @@ bool LaneDetector::LoadCameraMatrix(String file_)
     // Transformation from object points to scene points
     this->T = getPerspectiveTransform( obj_pts, scene_pts);
 
+    // Initialize parameters
     this->window_step = N_WINDOWS_INIT;
     this->left_line_pts = vector<Point>();
     this->right_line_pts = vector<Point>();
 
     return true;
+}
+
+void LaneDetector::Compute()
+{
+
+    // Apply distortion correction to image
+    this->UndistortImage();
+
+    // Get Region Of Interest (ROI)
+    this->GetImageROI();
+
+    // Detect edges and apply color thresholds
+    this->GetBinaryEdges();
+
+    // Appply a perspective tranformation to get the birds-eye-view
+    this->PerspectiveTransformation();
+
+    // Detect both lines in the road
+    this->DetectLine();
+
+    // Compute courvature and distance of the vehicle to the center of the road
+    this->ComputeCurvatureDistance();
+
+    return;
 }
 
 void LaneDetector::UndistortImage()
@@ -138,36 +160,30 @@ void LaneDetector::GetBinaryEdges()
     split(hsv_image,hsv_channels);
     Mat binary_sat = hsv_channels[2] > HSV_TH;
 
-    // Mat binary_yellow;
-    // inRange(hsv_image, Scalar(10,50,0), Scalar(90,255,255), binary_yellow);
-    // show(binary_yellow);
-
     // Lab Colos space threshold
     Mat lab_image;
     Mat lab_channels[3];
     cvtColor(this->mask, lab_image, cv::COLOR_RGB2Lab);
     split(lab_image, lab_channels);
     Mat binary_l = lab_channels[0] > LAB_TH;
-    // show(binary_l); 
 
     // Combine all masks
     this->mask = binary_sat | binary_l ;//| binary_edges;
 
+    // Apply morphological transformations to delete small particles, and fill small holes
     Mat m_kernel = getStructuringElement(MORPH_RECT, Size(MORPH_K, MORPH_K));
     morphologyEx(this->mask.clone(), this->mask, MORPH_CLOSE, m_kernel);
-    //show(this->mask);;
-    morphologyEx(this->mask.clone(), this->mask, MORPH_OPEN, m_kernel);
-    //show(this->mask);   
+    morphologyEx(this->mask.clone(), this->mask, MORPH_OPEN, m_kernel); 
+
     return;
 }
 
 
 void LaneDetector::PerspectiveTransformation()
 {   
+    // Apply perspective transformation to mask (bird-eye)
     warpPerspective(this->mask.clone(), this->mask, this->T, this->mask.size(), INTER_LINEAR, BORDER_CONSTANT);
     this->mask = this->mask > 0;
-
-    //show(this->mask);
 
     return;
 }
@@ -192,7 +208,8 @@ void LaneDetector::DetectLine()
     {
         // Easier to work with the rotated image (for polinomial fitting)
         rotate(this->mask.clone(), this->mask, ROTATE_90_CLOCKWISE);
-    
+
+        // Apply mask near the position of the previous detected line
         this->ApplyZoneMask();
         this->left_lane_center = this->left_line_pts[0].y;
         this->right_lane_center = this->right_line_pts[this->right_line_pts.size()-1].y;
@@ -246,17 +263,15 @@ void LaneDetector::FitLines(vector<Point>& left_pts_, vector<Point>& right_pts_)
     left_pts_ = left_points_fit;
     right_pts_ = right_points_fit;
 
-    vector<Mat> channels;
-    channels.push_back(this->mask);
-    channels.push_back(this->mask);
-    channels.push_back(this->mask);
-    //this->mask.convertTo(imgHist, CV_8UC3);
-    merge(channels, imgHist);
-    cv::polylines(imgHist, left_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
-    cv::polylines(imgHist, right_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
- 
-    // show(imgHist, true);
+    // vector<Mat> channels;
+    // channels.push_back(this->mask);
+    // channels.push_back(this->mask);
+    // channels.push_back(this->mask);
 
+    // merge(channels, imgHist);
+    // cv::polylines(imgHist, left_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
+    // cv::polylines(imgHist, right_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
+ 
     return;
 }
 
@@ -337,7 +352,6 @@ void LaneDetector::UpdateWindows(int it_)
     rectangle(imgHist, right_roi, Scalar(0,255,0), 3, 8, 0);
     circle(imgHist, this->left_line_pts[this->left_line_pts.size()-1], 10, (0,0,255), -1);
     circle(imgHist, this->right_line_pts[this->right_line_pts.size()-1], 10, (0,0,255), -1);
-    //show(imgHist, true);
 
     return;
 }
@@ -381,13 +395,15 @@ void LaneDetector::ApplyZoneMask()
     //show(this->mask, true);
 }
 
-double LaneDetector::GetDistance(Point p1_, Point p2_) {
+double LaneDetector::GetDistance(Point2f p1_, Point2f p2_) {
+    // Return the euclidean distance between two points
     double dx = p1_.x - p2_.x;
     double dy = p1_.y - p2_.y;
     return abs(sqrt(dx*dx + dy*dy));
 }
 
-double LaneDetector::GetArea(Point p1_, Point p2_, Point p3_) {
+double LaneDetector::GetArea(Point2f p1_, Point2f p2_, Point2f p3_) {
+    // Return the area formed by three points
     return (p1_.x * (p2_.y - p3_.y) + p2_.x * (p3_.y - p1_.y) + p3_.x * (p1_.y - p2_.y)) / 2;
 }
 
@@ -395,72 +411,89 @@ void LaneDetector::ComputeCurvatureDistance()
 {
     vector<Point> mid_points;
     vector<double> curvature;
-
+    // Loop over all the points, we have to detect the curvure locally for each three points
     for(size_t i = 0; i < this->left_line_pts.size(); i++)
     {
         mid_points.push_back( Point(this->left_line_pts[i].x, (this->left_line_pts[i].y + this->right_line_pts[i].y)/2));
         // Compute Curvure using 3 points (4*triangleArea/(sideLength1*sideLength2*sideLength3))
         if(i > 2 && i < this->left_line_pts.size()-3)
         {
-            Point p1, p2, p3;
+            Point2f p1, p2, p3;
             p1 = mid_points[i-2];
             p2 = mid_points[i-1];
             p3 = mid_points[i];
 
+            // Convert units to 'm'
+            // Note: at this point the image is still rotated, so X -> Y
+            p1.x = p1.x * M_2PIX_Y;
+            p1.y = p1.y * M_2PIX_X;
+            p2.x = p2.x * M_2PIX_Y;
+            p2.y = p2.y * M_2PIX_X;
+            p3.x = p3.x * M_2PIX_Y;
+            p3.y = p3.y * M_2PIX_X;
+
+            // Compute distance between all points
             double d12 = this->GetDistance(p1, p2);
             double d23 = this->GetDistance(p2, p3);
             double d31 = this->GetDistance(p3, p1);
-
+            // Compute the area formed by all points
             double area = this->GetArea(p1, p2, p3);
-
+            // Get tue curvure given three points
             curvature.push_back(4*area/(d12*d23*d31));
         }
     }
 
-    this->dist_2center = mid_points[0].y - this->current_frame.cols/2;
-    this->dist_2center *= M_2PIX;
+    // Dist from the center of the vehicle to the center of the lane
+    this->dist_2center = this->left_line_pts[0].y + this->right_line_pts[this->right_line_pts.size()-1].y;
+    this->dist_2center /= 2;
+    this->dist_2center = abs(this->dist_2center - this->current_frame.cols/2);
+    this->dist_2center *= M_2PIX_X;
 
+    // Return the average curvure
     double sum  = accumulate(curvature.begin(), curvature.end(), 0.0);
     this->curvature_ref = sum/curvature.size();
-    //cout << this->dist_2center << endl;
 
-    cv::Mat debug_img(this->mask.size(), CV_8UC3, cv::Scalar(0, 0, 0));
-    cv::polylines(debug_img, mid_points, false, cv::Scalar(0, 255, 255), 8, 8, 0);
-
-
-    // rotate(debug_img.clone(), debug_img, ROTATE_90_COUNTERCLOCKWISE );
-    //debug_img = this->current_frame + debug_img*0.5;
-    //imshow("debug_img", debug_img);
-    //waitKey(0);
     return;
 }
 
-void LaneDetector::DrawLanes()
+void LaneDetector::DrawLanes(Mat &_img)
 {
     cv::Mat debug_img(this->mask.size(), CV_8UC3, cv::Scalar(0, 0, 0));
 
+    // concatenate all lane points in a single vector
     vector<Point> print_points;
     print_points.insert(print_points.begin(), this->left_line_pts.begin(), this->left_line_pts.end());
     print_points.insert(print_points.begin(), this->right_line_pts.begin(), this->right_line_pts.end());
+
+    // Fill the space between the lines
     fillConvexPoly(debug_img, &print_points[0], print_points.size(), Scalar(200,0,0), 8, 0);
 
+    // Draw lane lines
     cv::polylines(debug_img, this->left_line_pts, false, cv::Scalar(0, 255, 255), 15, 8, 0);
     cv::polylines(debug_img, this->right_line_pts, false, cv::Scalar(0, 255, 255), 15, 8, 0);
-
     rotate(debug_img.clone(), debug_img, ROTATE_90_COUNTERCLOCKWISE );
 
+    // Apply inverse transformation to drawn image
     warpPerspective(debug_img.clone(), debug_img, this->T.inv(), debug_img.size(), INTER_LINEAR, BORDER_CONSTANT);
+    // this->dist_2center = this->left_line_pts[0].y + this->right_line_pts[this->right_line_pts.size()-1].y;
+    // this->dist_2center /= 2;
+    // this->dist_2center = abs(this->dist_2center - this->current_frame.cols/2);
+    // this->dist_2center *= M_2PIX_X;
 
-    debug_img = this->current_frame + debug_img*0.5;
+    // Draw curve and distance information to image
+    putText(debug_img, "Radius of curvature: ", Point(20,50), FONT_HERSHEY_DUPLEX, 1, Scalar(50,0,250), 2);
+    putText(debug_img, to_string(int(abs(1/this->curvature_ref)))+" m", Point(400,50), FONT_HERSHEY_DUPLEX, 1, Scalar(50,0,250), 2);
+    putText(debug_img, "Distance to center: ", Point(20,100), FONT_HERSHEY_DUPLEX, 1, Scalar(50,0,250), 2);
+    putText(debug_img, to_string(float(abs(this->dist_2center)))+" m", Point(340,100), FONT_HERSHEY_DUPLEX, 1, Scalar(50,0,250), 2);
 
-    this->left_lane_center = this->left_line_pts[0].y;
-    this->right_lane_center = this->right_line_pts[this->right_line_pts.size()-1].y;
+    // Perform a weighted sum between original ans drawn image
+    _img = _img + debug_img*0.5;
 
-
-    circle(debug_img, Point(this->left_lane_center,700), 10, (0,0,255), -1);
-    circle(debug_img, Point(this->right_lane_center,700), 10, (0,0,255), -1);
-
-    show(debug_img);
+    // debug: drawn two small points in the beginnig of each line
+    // this->left_lane_center = this->left_line_pts[0].y;
+    // this->right_lane_center = this->right_line_pts[this->right_line_pts.size()-1].y;
+    // circle(_img, Point(this->dist_2center,700), 5, (0,0,255), -1);
+    // circle(_img, Point(this->current_frame.cols/2,700), 5, (0,0,255), -1);
 
     return;
 }

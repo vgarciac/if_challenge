@@ -123,7 +123,7 @@ Mat GetBinnedFeatures(Mat _img)
     return descriptor;
 }
 
-int GetFeatureVector(Mat _img, Mat &_vector)
+void GetFeatureVector(Mat _img, Mat &_vector)
 {
     Mat feature_vector;
 
@@ -138,7 +138,6 @@ int GetFeatureVector(Mat _img, Mat &_vector)
 
     // Concatenate all three vectors in a single one
     hconcat(hog_f, hist_f, feature_vector);
-    int non_normalized_sz = hog_f.cols;
     hconcat(hog_f, bin_f, feature_vector);
 
     // Check to assign or concatenated the computed vector with the input vector
@@ -151,7 +150,7 @@ int GetFeatureVector(Mat _img, Mat &_vector)
         vconcat(_vector, feature_vector, _vector);
     }
 
-    return non_normalized_sz;
+    return;
 }
 
 Mat GenerateLabel(Mat &_vector, bool _label)

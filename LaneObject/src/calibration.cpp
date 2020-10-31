@@ -3,10 +3,9 @@
 #include <opencv2/core.hpp>
 
 //#define DEBUG
-#define BOARD_W 9
-#define BOARD_H 6
-#define SQUARE_SIZE 0.24
-
+const int BOARD_W = 9;
+const int BOARD_H = 6;
+const float SQUARE_SIZE = 0.24;
 
 using namespace std;
 using namespace cv;
