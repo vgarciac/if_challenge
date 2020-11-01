@@ -184,8 +184,15 @@ This heat map, in parallel with the final detection of the detected contour is s
  <img src="results/heat_map6.jpg"> | <img src="results/heat_map_contours6.jpg"> 
  <img src="results/heat_map8.jpg"> | <img src="results/heat_map_contours8.jpg"> 
 
+## Requirements
+
+The current release has been developed and tested in Ubuntu 18.04 LTS 64 bits
+
+- [OpenCV 3.2+](http://opencv.org) and extra modules (OpenCV contrib).
+- [cmake 2.8](https://cmake.org/) - cmake making it happen again
 
 ## Installation
+
 
 To test the code, you must follow the instruction to build the programs:
 
