@@ -6,7 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-const int GAUSSIAN_KERNEL = 15;
+const int GAUSSIAN_KERNEL = 5;
 const float CANNY_SIGMA = 0.5;
 const int HSV_TH = 170;
 const int LAB_TH = 200;
@@ -19,6 +19,7 @@ const int N_WINDOWS_INIT = 7;
 const int N_WINDOWS_NEXT = 20;
 const int WINDOW_W = 250;
 const int ZONE_SIZE = 150;
+const int AVG_LINES = 5;
 
 
 enum ZONES 
@@ -34,7 +35,7 @@ void PolyFit(vector<Point> data_pts_, int order_, vector<float>& coef_);
 Mat CustomPolyfit(vector<Point>& in_point, int n);
 bool polynomial_curve_fit(std::vector<cv::Point>& key_point, int n, cv::Mat& A);
 
-void show(Mat _img, bool rot_ = false);
+void show(Mat _img, bool rot_ = false, String _name = "DEBUG");
 
 class LaneDetector
 {
@@ -56,6 +57,9 @@ class LaneDetector
 
     vector<Point> left_line_pts;
     vector<Point> right_line_pts;
+
+    vector<vector<Point>> avg_left;
+    vector<vector<Point>> avg_right;
 
     // Initialize first_time as false
     LaneDetector(bool _first = true) : first_time(_first) {};
@@ -87,6 +91,8 @@ class LaneDetector
     void UpdateWindows(int it_);
 
     void ApplyZoneMask();
+
+    void AvgPoints();
 
     double GetArea(Point2f p1_, Point2f p2_, Point2f p3_);
 
