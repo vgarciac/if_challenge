@@ -179,6 +179,12 @@ void LaneDetector::GetBinaryEdges()
     // Combine all masks
     this->mask = binary_val | binary_l | binary_edges;
     //show(mask, 0);
+    // imwrite("../results/binary_val.jpg", binary_val);
+    // imwrite("../results/binary_l.jpg", binary_l);
+    // imwrite("../results/binary_edges.jpg", binary_edges);
+    // show(binary_val, 0, "binary_val");
+    // show(binary_l, 0, "binary_l");
+    // show(binary_edges, 0, "binary_edges");
 
     // Apply morphological transformations to delete small particles, and fill small holes
     Mat m_kernel = getStructuringElement(MORPH_RECT, Size(MORPH_K, MORPH_K));
