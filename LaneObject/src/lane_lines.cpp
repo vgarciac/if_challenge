@@ -3,12 +3,13 @@
 using namespace cv;
 using namespace std;
 
-void show(Mat _img, bool rot_){
+// Auxiliar function
+void show(Mat _img, bool rot_, String _name){
     if(rot_)
     {
         rotate(_img.clone(), _img, ROTATE_90_COUNTERCLOCKWISE);
     }
-    imshow("Debug image", _img);
+    imshow(_name, _img);
     waitKey(1);
 }
 
@@ -27,8 +28,8 @@ struct AddPoint
 
 void LaneDetector::FeedImage(Mat image_)
 {
-    this->mask.release();
-
+    // Save input image. mask image will be used as binary mask
+    this->mask =  Mat(image_.size(), CV_8UC1, Scalar::all(0));
     this->current_frame = image_.clone();
     this->to_plot = image_.clone();
     return;
@@ -77,15 +78,14 @@ bool LaneDetector::LoadCameraMatrix(String file_)
 
 void LaneDetector::Compute()
 {
-
     // Apply distortion correction to image
     this->UndistortImage();
 
-    // Get Region Of Interest (ROI)
-    this->GetImageROI();
-
     // Detect edges and apply color thresholds
     this->GetBinaryEdges();
+
+    // Get Region Of Interest (ROI)
+    this->GetImageROI();
 
     // Appply a perspective tranformation to get the birds-eye-view
     this->PerspectiveTransformation();
@@ -101,10 +101,9 @@ void LaneDetector::Compute()
 
 void LaneDetector::UndistortImage()
 {
-    Mat undistorted;
+
     // Get new camera matrix based on new image size
     Mat new_camera_matrix = getOptimalNewCameraMatrix(this->camera_matrix, this->dist_coeff, this->current_frame.size(), 1);
-
     // Apply distortion correction
     undistort(this->current_frame.clone(), this->current_frame, this->camera_matrix, this->dist_coeff);
 
@@ -113,7 +112,7 @@ void LaneDetector::UndistortImage()
 
 void LaneDetector::GetImageROI()
 {
-    Mat new_roi = Mat(this->current_frame.size(), CV_8UC1, Scalar::all(0));
+    Mat new_roi = Mat(this->mask.size(), CV_8UC1, Scalar::all(0));
 
     // Create triangle vertices
     vector<Point> ptmask3;
@@ -129,52 +128,63 @@ void LaneDetector::GetImageROI()
     fillConvexPoly(new_roi, &pt[0], pt.size(), 255, 8, 0);
 
     // Apply mask to input image
-    Mat new_image;
-    this->current_frame.copyTo(this->mask, new_roi);
-    //this->current_frame = new_image;
+    Mat aux_mat;
+    this->mask.copyTo(aux_mat, new_roi);
+    this->mask = aux_mat;
+    // show(this->mask);
     return;
 }
 
 void LaneDetector::GetBinaryEdges()
 {
     cv::Mat gray;
-    cvtColor(this->mask, gray, cv::COLOR_RGB2GRAY);
-
-    // Remove noise by apllying gaussian filter
-    GaussianBlur(gray, gray, Size(GAUSSIAN_KERNEL, GAUSSIAN_KERNEL), 0);
+    cvtColor(this->current_frame, gray, cv::COLOR_RGB2GRAY);
 
     // Find best parameters for canny
     Scalar mean_value = mean(gray);
     double low_th = max(0., (1.0 - CANNY_SIGMA) * double(mean_value[0]));
     double up_th = min(255., (1.0 + CANNY_SIGMA) * double(mean_value[0]));
 
-    // Apply Canny Algorithm to detect edges
     Mat binary_edges;
-    cv::Canny(gray, binary_edges, low_th, up_th);
-    //show(binary_edges);  
+    // Replaced by gradient images
+    // Apply Canny Algorithm to detect edges
+    // cv::Canny(gray, binary_edges, low_th, up_th);
+
+    // Remove noise by apllying gaussian filter
+    GaussianBlur(gray, gray, Size(GAUSSIAN_KERNEL, GAUSSIAN_KERNEL), 0);
+    // Compute gradient 
+    Mat abs_grad_x, abs_grad_y;
+    Mat dx, dy;
+    Sobel(gray, dx, CV_32F, 1, 0);
+    Sobel(gray, dy, CV_32F, 0, 1);
+    convertScaleAbs( dx, abs_grad_x );
+    convertScaleAbs( dy, abs_grad_y );
+    addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, binary_edges );
+    // show(binary_edges);
 
     // Hsv Colos space threshold
     Mat hsv_image;
     Mat hsv_channels[3];
-    cvtColor(this->mask, hsv_image, cv::COLOR_RGB2HSV);
+    cvtColor(this->current_frame, hsv_image, cv::COLOR_RGB2HSV);
     split(hsv_image,hsv_channels);
-    Mat binary_sat = hsv_channels[2] > HSV_TH;
+    Mat binary_val = hsv_channels[2] > HSV_TH;
 
     // Lab Colos space threshold
     Mat lab_image;
     Mat lab_channels[3];
-    cvtColor(this->mask, lab_image, cv::COLOR_RGB2Lab);
+    cvtColor(this->current_frame, lab_image, cv::COLOR_RGB2Lab);
     split(lab_image, lab_channels);
     Mat binary_l = lab_channels[0] > LAB_TH;
 
     // Combine all masks
-    this->mask = binary_sat | binary_l ;//| binary_edges;
+    this->mask = binary_val | binary_l | binary_edges;
+    //show(mask, 0);
 
     // Apply morphological transformations to delete small particles, and fill small holes
     Mat m_kernel = getStructuringElement(MORPH_RECT, Size(MORPH_K, MORPH_K));
     morphologyEx(this->mask.clone(), this->mask, MORPH_CLOSE, m_kernel);
     morphologyEx(this->mask.clone(), this->mask, MORPH_OPEN, m_kernel); 
-
+    //show(this->mask);
     return;
 }
 
@@ -183,7 +193,7 @@ void LaneDetector::PerspectiveTransformation()
 {   
     // Apply perspective transformation to mask (bird-eye)
     warpPerspective(this->mask.clone(), this->mask, this->T, this->mask.size(), INTER_LINEAR, BORDER_CONSTANT);
-    this->mask = this->mask > 0;
+    this->mask = this->mask > 50;
 
     return;
 }
@@ -215,7 +225,6 @@ void LaneDetector::DetectLine()
         this->right_lane_center = this->right_line_pts[this->right_line_pts.size()-1].y;
         this->window_step = N_WINDOWS_NEXT;
     }
-
     for(size_t i = 0; i < this->window_step; i++)
     {
         // Update search window for line search
@@ -225,6 +234,8 @@ void LaneDetector::DetectLine()
     // Once we have some points of the line, we fit it to a 2nd degree polinomial curve
     this->FitLines(this->left_line_pts, this->right_line_pts);
 
+    // Average last N lines (slow implementation)
+    // this->AvgPoints();
 
     return;
 }
@@ -247,7 +258,7 @@ void LaneDetector::FitLines(vector<Point>& left_pts_, vector<Point>& right_pts_)
     
     std::vector<cv::Point> left_points_fit, right_points_fit;
     // Evaluate X points to get the line
-    for (int x = 0; x <= 600; x+=20)
+    for (int x = 0; x <= 720; x+=20)
     {
         double y_l = poly_coeff_l.at<double>(0, 0) + poly_coeff_l.at<double>(1, 0) * x +
             poly_coeff_l.at<double>(2, 0)*std::pow(x, 2) + poly_coeff_l.at<double>(3, 0)*std::pow(x, 3);
@@ -263,14 +274,9 @@ void LaneDetector::FitLines(vector<Point>& left_pts_, vector<Point>& right_pts_)
     left_pts_ = left_points_fit;
     right_pts_ = right_points_fit;
 
-    // vector<Mat> channels;
-    // channels.push_back(this->mask);
-    // channels.push_back(this->mask);
-    // channels.push_back(this->mask);
-
-    // merge(channels, imgHist);
-    // cv::polylines(imgHist, left_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
-    // cv::polylines(imgHist, right_pts_, false, cv::Scalar(0, 255, 255), 15, 8, 0);
+    // Mat debug_img;
+    // cv::polylines(debug_img, left_pts_, false, cv::Scalar(0, 0, 255), 15, 8, 0);
+    // cv::polylines(debug_img, right_pts_, false, cv::Scalar(0, 0, 255), 15, 8, 0);
  
     return;
 }
@@ -345,13 +351,13 @@ void LaneDetector::UpdateWindows(int it_)
     channels.push_back(this->mask);
     channels.push_back(this->mask);
     channels.push_back(this->mask);
-    //this->mask.convertTo(imgHist, CV_8UC3);
+    // this->mask.convertTo(imgHist, CV_8UC3);
     merge(channels, imgHist);
 
     rectangle(imgHist, left_roi, Scalar(0,255,0), 3, 8, 0);
     rectangle(imgHist, right_roi, Scalar(0,255,0), 3, 8, 0);
-    circle(imgHist, this->left_line_pts[this->left_line_pts.size()-1], 10, (0,0,255), -1);
-    circle(imgHist, this->right_line_pts[this->right_line_pts.size()-1], 10, (0,0,255), -1);
+    //circle(to_plot, this->left_line_pts[this->left_line_pts.size()-1], 10, (0,0,255), -1);
+    //circle(to_plot, this->right_line_pts[this->right_line_pts.size()-1], 10, (0,0,255), -1);
 
     return;
 }
@@ -370,6 +376,8 @@ void LaneDetector::ApplyZoneMask()
     }
 
     cv::Mat mask_zone(this->mask.size(), CV_8UC1, cv::Scalar(0));
+
+    // Draw function
     // vector<Mat> channels;
     // channels.push_back(this->mask);
     // channels.push_back(this->mask);
@@ -392,7 +400,8 @@ void LaneDetector::ApplyZoneMask()
 
     this->mask = this->mask & mask_zone;
 
-    //show(this->mask, true);
+    // show(to_plot, 0, "mask_zone");
+    // imwrite("../results/mask_zone.jpg", to_plot );
 }
 
 double LaneDetector::GetDistance(Point2f p1_, Point2f p2_) {
@@ -456,6 +465,39 @@ void LaneDetector::ComputeCurvatureDistance()
     return;
 }
 
+void LaneDetector::AvgPoints()
+{
+
+    this->avg_left.push_back(this->left_line_pts);
+    this->avg_right.push_back(this->right_line_pts);
+
+    if(this->avg_left.size() >= AVG_LINES)
+    {
+        this->avg_left.erase(this->avg_left.begin());
+        this->avg_right.erase(this->avg_right.begin());
+    }
+
+    for(size_t i = 0; i < this->avg_left.size()-1; i++ )
+    {
+        for(size_t j = 0; j < this->left_line_pts.size(); j++)
+        {
+            this->left_line_pts[j].x += this->avg_left[i][j].x;
+            this->left_line_pts[j].y += this->avg_left[i][j].y;
+            this->right_line_pts[j].x += this->avg_right[i][j].x;
+            this->right_line_pts[j].y += this->avg_right[i][j].y;
+        }
+    }
+    for(size_t j = 0; j < this->left_line_pts.size(); j++)
+    {
+        this->left_line_pts[j].x /= (this->avg_left.size());
+        this->left_line_pts[j].y /= (this->avg_left.size());
+        this->right_line_pts[j].x /= (this->avg_right.size());
+        this->right_line_pts[j].y /= (this->avg_right.size());
+    }
+
+    return;
+}
+
 void LaneDetector::DrawLanes(Mat &_img)
 {
     cv::Mat debug_img(this->mask.size(), CV_8UC3, cv::Scalar(0, 0, 0));
@@ -475,10 +517,6 @@ void LaneDetector::DrawLanes(Mat &_img)
 
     // Apply inverse transformation to drawn image
     warpPerspective(debug_img.clone(), debug_img, this->T.inv(), debug_img.size(), INTER_LINEAR, BORDER_CONSTANT);
-    // this->dist_2center = this->left_line_pts[0].y + this->right_line_pts[this->right_line_pts.size()-1].y;
-    // this->dist_2center /= 2;
-    // this->dist_2center = abs(this->dist_2center - this->current_frame.cols/2);
-    // this->dist_2center *= M_2PIX_X;
 
     // Draw curve and distance information to image
     putText(debug_img, "Radius of curvature: ", Point(20,50), FONT_HERSHEY_DUPLEX, 1, Scalar(50,0,250), 2);
@@ -489,12 +527,6 @@ void LaneDetector::DrawLanes(Mat &_img)
     // Perform a weighted sum between original ans drawn image
     _img = _img + debug_img*0.5;
 
-    // debug: drawn two small points in the beginnig of each line
-    // this->left_lane_center = this->left_line_pts[0].y;
-    // this->right_lane_center = this->right_line_pts[this->right_line_pts.size()-1].y;
-    // circle(_img, Point(this->dist_2center,700), 5, (0,0,255), -1);
-    // circle(_img, Point(this->current_frame.cols/2,700), 5, (0,0,255), -1);
-
     return;
 }
 
@@ -502,7 +534,6 @@ void LaneDetector::printHistogram(vector<int> histogram, std::string filename, c
 {
 	// Finding the maximum value of the histogram. It will be used to scale the
 	// histogram to fit the image.
-
 	int max = *max_element(histogram.begin(), histogram.end());
 
 	// Creating an image from the histogram.

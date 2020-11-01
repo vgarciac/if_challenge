@@ -13,6 +13,7 @@ build/CMakeFiles/*
 build/cmake*
 build/CMake*
 build/Make*
+build
 
 #Images And Videos
 test_images

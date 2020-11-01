@@ -10,7 +10,7 @@ int main()
     Mat input_img;
 
     LaneDetector lane_detector;
-    VideoCapture capture("../videos/project_video.mp4");
+    VideoCapture capture("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/videos/project_video.mp4");
 
     char keyboard = 0;
     if (!capture.isOpened()) {
@@ -20,15 +20,16 @@ int main()
     }
 
     // Load Camera matrix and distortion coefficients
-    if (!lane_detector.LoadCameraMatrix("../calibration_file.xml"))
+    if (!lane_detector.LoadCameraMatrix("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/calibration_file.xml"))
     {
         cerr << "Failed to open calibration_file" << endl;
         return -1;
     }
 
     // Load new image
-    input_img =  imread("../test_images/straight_lines1.jpg");
-    if( input_img.empty())
+    Mat biard;
+    biard =  imread("/home/blanco-deniz.julio-cesar/if_challenge/LaneObject/camera_cal/calibration1.jpg");
+    if( biard.empty())
     {
         cerr << "Failed to open test image" << endl;
         return -1;
@@ -41,7 +42,7 @@ int main()
             cerr << "Exiting..." << endl;
             return 0;
         }
-        
+
         // Feed the algorithm with new video frame
         lane_detector.FeedImage(input_img);
 
@@ -51,7 +52,8 @@ int main()
         // Draw the detected lane with the original image
         lane_detector.DrawLanes(input_img);
 
-        show(input_img);
+        show(input_img, 0, "input_img");
+
     }
     return 0;
 }
