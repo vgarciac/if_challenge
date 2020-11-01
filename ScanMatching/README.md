@@ -22,8 +22,8 @@ For this implementation we use:
 
 The algorithm can be visualized in the following diagram:
 
-<p align="center" width="100%">
-<img  width="60%" src="data/diagram.svg"> </p>
+<p align="center" width="80%">
+<img  width="50%" src="data/diagram.svg"> </p>
 
 ## Results
 
@@ -32,10 +32,12 @@ As testing case, a random set of points is created. Then, a random rotation and 
 The progress of the algorithm while running to find the best transformation, is ilustrate ins the following animation:
 
 ### Example 1
-<img width="100%" src="data/icp_3.gif"> </p>
+<p align="center">
+<img width="60%" src="data/icp_3.gif"> </p>
 
 ### Example 2
-<img width="100%" src="data/icp_4.gif"> </p>
+<p align="center">
+<img width="60%" src="data/icp_4.gif"> </p>
 
 ## Usage
 
