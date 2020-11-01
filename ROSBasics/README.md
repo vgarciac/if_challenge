@@ -88,7 +88,7 @@ In the case of subscribers, the same logic applies. If the computation time is l
 
 ## Installation
 
-Oo test the code, you must follow the instruction to build the ROS nodes:
+To test the code, you must follow the instruction to build the ROS nodes:
 
 ```bash
 git clone THIS-REPO-URL

@@ -4,6 +4,17 @@ using namespace cv;
 using namespace std;
 using namespace cv::ml;
 
+Mat to_plot;
+
+void show(Mat _img, int _ms, String _name, bool _write){
+    imshow(_name, _img);
+    if(_write)
+    {
+        imwrite("../results/"+_name+".jpg", _img);
+    }
+    waitKey(_ms);
+}
+
 void CarsDetector::FeedImage(Mat image_)
 {
     // Feed algoriyhm with new image
@@ -15,12 +26,9 @@ void CarsDetector::FeedImage(Mat image_)
 
 void CarsDetector::Compute()
 {
-        
+    
     // Apply distortion correction to image
     this->UndistortImage();
-
-    // Rect roi(0, input_img.rows*ROI_TOP, input_img.cols, input_img.rows*ROI_BOT);
-    // rectangle(this->current_frame, roi, Scalar(0,255,0), 3, 8, 0);
 
     this->SlideWindowsSearch();    
 
@@ -109,12 +117,13 @@ void CarsDetector::SlideWindowsSearch()
             }
         }
     }
-
     return;
 }
 
 void CarsDetector::UpdateMAsks()
 {
+    // rectangle(to_plot, temp_roi, Scalar(i,255,0), 1, 8, 0);
+
     // Delete oldest mask
     if(this->masks.size() >= N_MASKS)
     {
@@ -128,6 +137,8 @@ void CarsDetector::UpdateMAsks()
     {
         cumul_masks = cumul_masks + this->masks[i].clone();
     }
+    // to_plot = cumul_masks;
+    // show(to_plot, 0, String("heat_map"), true);
     cumul_masks = cumul_masks > MASK_THRESH;
 
     // Apply morpholical operations to delete small rectangles (lines superposed) 
@@ -147,4 +158,7 @@ void CarsDetector::DrawCars(Mat &_img)
     {
         drawContours( _img, this->cars_contours, (int)i,  Scalar( 255, 255, 0 ), 3, LINE_8, hierarchy, 0 );
     }
+    // to_plot = _img;
+    // show(to_plot, 0, String("heat_map_contours"), true);
+    cumul_masks = cumul_masks > MASK_THRESH;
 }

@@ -55,7 +55,7 @@ int main()
         car_detector.DrawCars(input_img);
         lane_detector.DrawLanes(input_img);
 
-        // video.write(input_img);
+        video.write(input_img);
         show(input_img, 1);
     }
 
