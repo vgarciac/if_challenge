@@ -1,6 +1,6 @@
 # 2D ICP Matching algorithm
 
-The ierative closest point is an algorithm implemented to minimize the difference between two set of points. Often used to reconstruct 2D/3D surfaces from differents scans, to correct robots localisation, etc.
+The iterative closest point is an algorithm implemented to minimize the difference between two set of points. Often used to reconstruct 2D/3D surfaces from differents scans, to correct robots localisation, etc.
 
 ## Implementation
 
@@ -27,9 +27,9 @@ The algorithm can be visualized in the following diagram:
 
 ## Results
 
-As testing case, a random set of points is created. Then, a random rotation and translation transformation is applied, and finally the points are random shuffled. The algorithm is take these two point sets to compute the final rigid transformation between the sets **A** and **B**.
+As testing case, a random set of points is created. Then, a random rotation and translation transformation is applied, and finally the points are randomly shuffled. The algorithm takes these two points sets to compute the final rigid transformation between the sets **A** and **B**.
 
-The progress of the algorithm while running to find the best transformation, is ilustrate ins the following animation:
+The progress of the algorithm while running to find the best transformation, is ilustrated in the following animation:
 
 ### Example 1
 <p align="center">

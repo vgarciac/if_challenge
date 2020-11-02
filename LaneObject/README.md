@@ -15,7 +15,7 @@ The camera calibration process is done to eliminate the distortion that is added
 
 The process consists of relating the points of the corners detected in the images (chess board images), with a perfectly rectangular arrangement (like the board in real life). Once these point relationships are detected, the coefficients of radial distortion that the camera adds to the pictures are estimated.
 
-Once you have this coeffitients, it is possible to correct the distortion by applying the inverse transformation to the new images. In this way, objects that are straight in real life can be seen straight in the images.
+Once you have these coefficients, it is possible to correct the distortion by applying the inverse transformation to the new images. In this way, objects that are straight in real life can be seen straight in the images.
 
 Original board image       |  Undistorted board image
 :-------------------------:|:-------------------------:
@@ -70,13 +70,13 @@ It is important to consider that an additional mask is applied in the region whe
 <p align="center" width="100%">
 <img width="60%" src="results/transformation_points.png"> </p>
 
-In order to estimate the real line from the mask image, and to estimate the curve of the line in the further steps, is necessary to have a top view of the road (and the lines). To achieve this, a picture where the lines seems rect is used, and with this assumption we take 4 points that belong to the line, and transform the whole image so that the line looks straight.  this kind or transformation is also called a bird's eye transformation. In the example image, the red dots are the lane lines, and the transformation is relating these points with the green stars.
+In order to estimate the real line from the mask image, and to estimate the curve of the line in the further steps, is necessary to have a top view of the road (and the lines). To achieve this, a picture where the lines seems straight is used, and with this assumption we take 4 points that belong to the line, and transform the whole image so that the line looks straight.  this kind or transformation is also called a bird's eye transformation. In the example image, the red dots are the lane lines, and the transformation is relating these points with the green stars.
 
 Mask image transformed (curve lane)    |  Original image transformed (curve lane) 
 :-------------------:|:---------------------------:
 <img width="90%" src="results/warpPerspective.jpg">  </p>  |  <img width="90%" src="results/warpPerspective2.jpg"> </p> 
 
-The next step is to detect all the line pixels and to make a difference between the right and left line. To do that in the first iteration, we start loking at the point where there are a big conentration of points in the X-axis, in other words, if we detect many points with close to the same X-coordinate value, it is possible that there is the beginning of the line.
+The next step is to detect all the line pixels and to make a difference between the right and left line. To do that in the first iteration, we start looking at the point where there are a big concentration of points in the X-axis, in other words, if we detect many points around the same X-coordinate value, it is possible that it is the beginning of the line.
 
 To accomplish this task, the histogram of the x-coordinates in the lower section of the binary image is calculated, and the peaks are consider as starting points to start finding the lines.
 
@@ -88,13 +88,14 @@ To accomplish this task, the histogram of the x-coordinates in the lower section
 
 Once we have detected these peaks, we use them as a base for the next step: search based on sliding windows.
 
-With this method, we search in each iteration for all the pixels inside the search window, and we update the next windows center based on the centroid of all the points detected in the previous window.
+For each iteration we calculate the centroid for all the pixels inside the search window, that will be the center of the next iteration window. The iteration process ends when we reach the top of the image.
+
 
 #### <center> **Sliding windows search** </center>
 <p align="center" width="100%">
 <img width="80%" src="results/cuadros.jpg"> </p>
 
-After all the pixels that belong to the line are detected, an approximation to a second order polynomial is made using least squares polynomial curve fitting method, and this result is considered as the detected line.
+After all the pixels that belong to the line are detected, an approximation to a second order polynomial is found using least squares polynomial curve fitting method, and this result is considered as the detected line.
 
 [Polynomial curve fitting reference](https://www.programmersought.com/article/50515052663/)
 
@@ -104,14 +105,14 @@ After all the pixels that belong to the line are detected, an approximation to a
 <p align="center" width="100%">
 <img width="80%" src="results/polylines.jpg"> </p>
 
-For the rest of the iterations, it is no longer necessary to recalculate the beginning of the line to perform a search with sliding windows. Instead, a search is performed considering the region near to the line detected in the previous step. This step improves the performance of the algorithm by being able to detect all points of the line in a single iteration.
+For the rest of the iterations, it is no longer necessary to recalculate the beginning of the line to perform a search with sliding windows. Instead, a search is performed considering the region near to the line obtained in the previous step. This step improves the performance of the algorithm by being able to detect all points of the line in a single iteration.
 
 #### <center> **Search window based on previous line** </center>
 <p align="center" width="100%">
 <img width="80%" src="results/mask_zone.jpg"> </p>
 
 Finally, the detected line as well as the track are drawn and 
-retransformed into the original shape, and finally added to the input image. Other important information such as track curvature and distance from the center of the vehicle to the center of the lane are calculated in the final step, and also added to the input image.
+retransformed into the original shape, and finally added to the input image. Other important information such as track curvature and distance from the center of the vehicle to the center of the lane are calculated in the final step and also added to the input image.
 
 # Vehicles detection
 
@@ -151,7 +152,7 @@ The color histogram gives us information about the distribution of color values 
 This vector gives us the information about the spatial distribution of the colors in the image. 
 
 
-The following diagram shows the process of extracting features from an image, from which we obtain the vector that best represents our sample. The final result will be a feature vector in a single array representation. At the end wi will have a Matrix of F[N(rows) x M(columns)] (N: number of samples, M: number of features) that represents all our training set.
+The following diagram shows the process of extracting features from an image, from which we obtain the vector that best represents our sample. The final result will be a feature vector in a single array representation. At the end we will have a Matrix of F[N(rows) x M(columns)] (N: number of samples, M: number of features) that represents all our training set.
 
 #### <center> **Features vector** </center>
 <p align="center" width="100%">
@@ -165,7 +166,7 @@ Once our classifier is trained, we will use it to give us a prediction for a set
 <p align="center" width="100%">
 <img width="60%" src="results/big_roi.jpg"> </p>
 
-Once the search area is established, the algorithm of sliding windows is applied to predict for each window whether it is a vehicle or not. In the following image you is posible to see the overlapping of windows in the search area. Additionally, two windows were added, highlighted in green to appreciate the size of each one. This last one is a configurable parameter, as well as the percentage of overlap between the windows, which greatly affect the performance detection and time.
+Once the search area is established, the algorithm of sliding windows is applied to predict for each window whether it is a vehicle or not. In the following image is posible to see the overlapping of windows in the search area. Additionally, two windows were added, highlighted in green to appreciate the size of each one. This last one is a configurable parameter, as well as the percentage of overlap between the windows, which greatly affect the performance detection and time.
 
 #### <center> **Small ROIs** </center>
 <p align="center" width="100%">
@@ -197,7 +198,7 @@ The current release has been developed and tested in Ubuntu 18.04 LTS 64 bits
 To test the code, you must follow the instruction to build the programs:
 
 ```bash
-git clone THIS-REPO-URL
+git clone https://github.com/vgarciac/if_challenge.git
 cd LaneObject
 mkdir build
 cd build
@@ -212,17 +213,17 @@ make
 
 Trained SVM images must be stord in:
 ```bash
-LaneObject-FOLDER/trained_svm.xml
+LaneObject/trained_svm.xml
 ```
 
 camera calibration file must be stord in:
 ```bash
-LaneObject-FOLDER/calibration_file.xml
+LaneObject/calibration_file.xml
 ```
 
 Input video must be stord in:
 ```bash
-LaneObject-FOLDER/videos/project_video.avi
+LaneObject/videos/project_video.avi
 ```
 
 For Car detection only:
@@ -247,8 +248,8 @@ cd build
 **To train the clasifier** \
 Labeled images must be stord in: \
 ```bash
-LaneObject-FOLDER/data/train_data/positive
-LaneObject-FOLDER/data/train_data/negative 
+LaneObject/data/train_data/positive
+LaneObject/data/train_data/negative 
 ```
 
 
@@ -259,7 +260,7 @@ cd build
 
 the trained clasifier will be saved in:
 ```bash
-LaneObject-FOLDER/trained_svm_2.xml
+LaneObject/trained_svm_2.xml
 ```
 
 
