@@ -31,13 +31,13 @@ As testing case, a random set of points is created. Then, a random rotation and 
 
 The progress of the algorithm while running to find the best transformation, is ilustrated in the following animation:
 
-### Example 1
+### Example with random generated points
 <p align="center">
 <img width="60%" src="data/icp_3.gif"> </p>
 
-### Example 2
+### Example with real data
 <p align="center">
-<img width="60%" src="data/icp_4.gif"> </p>
+<img width="60%" src="data/icp_real3.gif"> </p>
 
 ## Usage
 

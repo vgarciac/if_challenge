@@ -9,7 +9,7 @@ from sklearn.neighbors import KDTree
 from sklearn.metrics import mean_squared_error
 # Import function for random generation
 import random
-
+import pandas as pd
 
 def UpdateTransformationMatrices(R_global, T_global, R, T):
     '''
@@ -147,13 +147,11 @@ def ICPMatching(P, X, max_iter, RMS_threshold, fast = False, n_samples = 200):
             break
 
         # Plot
-        print(X.shape)
-        print(P.shape)
         plt.cla()
-        ax.plot(P.T[0], P.T[1], 'b.')
-        ax.plot(X.T[0], X.T[1], 'r.')
+        ax.plot(P.T[0], P.T[1], 'b,')
+        ax.plot(X.T[0], X.T[1], 'r,')
         ax.set_title('ICP matching 2D')
-        ax.set_title('Iteration {:d}  RMS error {:0.4f}'.format(iteration, rms_error))
+        ax.set_title('Iteration {:d}  RMS error {:0.6f}'.format(iteration, rms_error))
         plt.axis('equal')
         plt.draw()
         # Wait for button to avance one itaration
@@ -170,9 +168,8 @@ def ICPMatching(P, X, max_iter, RMS_threshold, fast = False, n_samples = 200):
 
     return X_aligned, R, T
 
-def create_points(n_points):
-    #for i in range(n_points):
-    ref_pts = np.random.rand(n_points, 2)*100
+def transformPoints(points):
+
     rad = np.random.random_sample()*40
     tx = np.random.random_sample()*50
     ty = np.random.random_sample()*50
@@ -188,36 +185,53 @@ def create_points(n_points):
                    [H[1][0], H[1][1]] ])
     T = np.array([ [H[0][2]], [H[1][2]] ])
 
-    pts = (np.dot(R, ref_pts.T).T + T.T)
+    points_transformed = (np.dot(R, points.T).T + T.T)
+
+    return points_transformed
+
+def create_points(n_points):
+    #for i in range(n_points):
+    ref_pts = np.random.rand(n_points, 2)*100
+    
+    pts = transformPoints(ref_pts)
 
     return ref_pts, pts
 
 
 if __name__ == '__main__':
-
+    
+    # Create data
     points_ref, points = create_points(1000)
     # random.shuffle(points)
 
-    # Create and save data
+    # Save data
+    #######################################################################
     # np.save('points_ref.npy', points_ref)
     # np.save('points.npy', points)
 
-    # # Load data
+    # Load data
+    #######################################################################
     # points_ref = np.load('points_ref.npy')
     # points = np.load('points.npy')
 
+    # Load real data
+    #######################################################################
+    # df = pd.read_csv (r'../pointclouds/Hokuyo_0.csv')
+    # # Cut the set of points
+    # points_ref = df[df['x'] >= 0.5]
+    # points_ref = points_ref.iloc[:, [1,2]]
+    # points_ref = points_ref.to_numpy()
+    # # Apply transformation to the points
+    # points = transformPoints(points_ref)
+    # # multiply points for debug purposes 
+    # points = points*5
+    # points_ref = points_ref*5
+
+    # Run the algorithm
+    #######################################################################
     # Define parameters
-    max_iter = 200
-    RMS_threshold = 0.01
-    n_samples = 200
+    max_iter = 1000
+    RMS_threshold = 0.0001
+    n_samples = 500
     # Apply ICP
     data_aligned, R, T = ICPMatching(points_ref, points, max_iter, RMS_threshold)
-
-    # fig, ax = plt.subplots()
-    # plt.cla()
-    # ax.plot(points.T[0], points.T[1], 'r.')
-    # ax.plot(points_ref.T[0], points_ref.T[1], 'b.')
-    # ax.set_title('ICP matching 2D')
-    # plt.axis('equal')
-    # plt.draw()
-    # plt.show()
